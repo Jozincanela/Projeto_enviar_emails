@@ -35,6 +35,7 @@ class CRUD:
         Variaveis:
             nome_tabela (str): "nome_da_tabela"
             nome_coluna_e_tipo (str): "coluna1 TIPO, coluna2 TIPO, coluna3 TIPO, ..."\n
+            tipo_de_tabela (int):0: tabela normal com chaves \n 1: tabela sem chaves
             
         Tipos:
             INTEGER, REAL, TEXT
@@ -156,7 +157,24 @@ class CRUD:
         banco.close()
         return informacoes
         
+    def ler_dado_chave(self,nome_tabela:str, chave: int):
+        """        
+        Ler uma linha de uma tabela especifica atravez da chave ultilizando a seguinte formatação \n
+        Variaveis:
+            nome_tabela (str): "nome_da_tabela"
+            chave (int): chave desejada
+        """
+        banco =  sq.connect(self.endereço_banco)
+        cursor = banco.cursor()
 
+        
+        informacoes = cursor.execute(f"SELECT * FROM {nome_tabela} WHERE CHAVE='{chave}'").fetchall()
+
+
+        banco.commit()
+        banco.close()
+        return informacoes
+        
     def atualizar_dados(self, nome_tabela:str, id:int, Coluna_com_Novo_valor: str):
         """        
         Atualiza dados de uma linha da tabela ultilizando a seguinte formatação\n
@@ -171,8 +189,8 @@ class CRUD:
         banco =  sq.connect(self.endereço_banco)
         cursor = banco.cursor()
         
-        coluna = CRUD.nome_colunas(nome_tabela)[0]
-        valor = CRUD.selecionar_linhas(nome_tabela, id)[0]
+        coluna = CRUD.nome_colunas(self,nome_tabela)[0]
+        valor = CRUD.selecionar_linhas(self,nome_tabela, id)[0]
         
         cursor.execute(f"UPDATE {nome_tabela} SET {Coluna_com_Novo_valor} WHERE {coluna}='{valor}'")
         banco.commit()
@@ -210,8 +228,8 @@ class CRUD:
         cursor = banco.cursor()
         
     
-        coluna = CRUD.nome_colunas(nome_tabela)[0]
-        valor = CRUD.selecionar_linhas(nome_tabela, id)[0]
+        coluna = CRUD.nome_colunas(self, nome_tabela)[0]
+        valor = CRUD.selecionar_linhas(self, nome_tabela, id)[0]
 
         cursor.execute(f"DELETE FROM {nome_tabela} WHERE {coluna} = {valor}")
         banco.commit()        

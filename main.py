@@ -1,18 +1,44 @@
 from tkinter import *
 from tkinter import ttk
 from bd_poo import CRUD
-'''Criando Janela Tkinter'''
+from tkinter import *
+from tkinter import ttk
+from bd_poo import CRUD
+from tkinter import filedialog
+from PIL import Image, ImageTk
+import smtplib
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+from email.mime.image import MIMEImage
+from reportlab.lib.pagesizes import letter
+from reportlab.pdfgen import canvas
+from reportlab.platypus import Image, SimpleDocTemplate, Paragraph
+from reportlab.lib import colors
+from reportlab.lib.styles import getSampleStyleSheet
+import time
+import threading
+
 Janela_main = Tk()
 Janela_main.title("Main")
 
-'''Criando uma tabela no Banco de dados'''
-Cadastro = CRUD("banco_projeto_email.db")
-Cadastro.nova_tabela("Cadastros", "Nome TEXT, Sobrenome TEXT, Email TEXT",0)
+Cadastro = CRUD("Main\\banco_projeto_email.db")
+
 Tabela_cadastro = "Cadastros"
 colunas_cadastro = "Nome, Sobrenome, Email"
 
+Tabela_excluidos = "Excluidos"
+coluanas_excluidos = "CHAVE,Nome,Sobrenome,Email"
+
+tabela_mensagem =  "Mensagem"
+colunas_mensagem = "mensagem chaves_usuarios"
+
+Cadastro.nova_tabela("Cadastros", "Nome TEXT, Sobrenome TEXT, Email TEXT",0)
+Cadastro.nova_tabela("Mensagem", "Mensagem TEXT, Titulo TEXT, Chaves_Usuarios TEXT, Imagem TEXT", 0)
+Cadastro.nova_tabela("Excluidos","Nome TEXT,Sobrenome TEXT, Email TEXT", 0 )
 
 
+def Sair():
+    Janela_main.destroy()
 
 def pagina_Cadastrar():
     janela_cadastro  = Tk()
@@ -87,7 +113,6 @@ def pagina_Cadastrar():
     Janela_main.iconify()
     janela_cadastro.mainloop()
 
-
 def gerenciamento_emails():
     Janela_gerenciamento = Tk()
     Janela_gerenciamento.title("Gerenciamento emails")
@@ -95,23 +120,26 @@ def gerenciamento_emails():
     Janela_main.iconify()
 
     def Fechar():
-        Janela_main.deiconify
+        Janela_main.deiconify()
         Janela_gerenciamento.destroy()
         
     def deletar_usuario():
         Janela_gerenciamento.iconify()
         Janela_delete_usu = Tk()
+        Janela_delete_usu.title("Deletar Usuario")
         
         def Fechar():
             Janela_gerenciamento.deiconify()
             Janela_delete_usu.destroy()
         
         def Entrys_del():
+        
             try:
-                chave_pessoa = list(Cadastro.ler_dado_id("Teste1", int(ID_usuario.get()))  [0])[0]
+                informaoes_usuario = str(Cadastro.ler_dado_id(Tabela_cadastro,int(ID_usuario.get()) )).replace("(", "").replace(")", "").replace("[","").replace("]", "")
+                chave_pessoa = list(Cadastro.ler_dado_id(Tabela_cadastro, int(ID_usuario.get()))  [0])[0]
                 for tabelas in str(Cadastro.Tabelas()).replace("(", "").replace(")", "").replace(",", "").replace("'", "").replace("[","").replace("]", "").split(" "):
-                
                     Cadastro.apagar_dados_linha_chave(tabelas, chave_pessoa)
+                Cadastro.inserir_dados(Tabela_excluidos,"CHAVE,Nome,Sobrenome,Email",informaoes_usuario,1)
             except:
                 pass
             Confirma_salvamento = Label(Janela_delete_usu, text="Usuario Deletado!")
@@ -128,69 +156,7 @@ def gerenciamento_emails():
         
         Janela_delete_usu.mainloop()
         
-    def deletar_lista():
-        Janela_Deletar_lista =  Tk()
-        Janela_Deletar_lista.title("Deletar lista")
-        Janela_gerenciamento.iconify()
-        
-        def Fechar_Janela_Deletar_lista():
-
-            Janela_gerenciamento.deiconify()
-            Janela_Deletar_lista.destroy()
-        def apagar_lista():
-            try:
-                lista_apagada = lista_tabelas [int(escolha_id.get()) -  1]
-                if int(escolha_id.get()) - 1  == 0:
-                    texto_conclusao['text'] =  "Não é permitido excluir a tabela mãe"
-                else :
-
-                        Cadastro.apagar_tabela(lista_apagada)
-                        texto_conclusao['text'] =  f"Tabela {lista_apagada} deletada do banco de dados"
-            except:
-                texto_conclusao['text'] =  f"Não foi possivel deletar a Tabela do banco de dados"
-                pass
-                    
-        
-        
-
-
-        lista_id = []
-        global Nomes_das_listas
-        Nomes_das_listas = []
-        lista_tabelas = Cadastro.Tabelas()
-        tabela_listas = ttk.Treeview(Janela_Deletar_lista, columns=("id" ,"Nome da Lista"), show="headings")
-        tabela_listas.column('id' ,minwidth=0, width=50)
-        tabela_listas.column('Nome da Lista' ,minwidth=0, width=150)
-        tabela_listas.heading('id', text="ID")
-        tabela_listas.heading('Nome da Lista', text="NOME DA LISTA")
-        tabela_listas.grid(row= 1, column=1, columnspan= 3)
-
-        for labels in range  (0, len(lista_tabelas)):
-            lista_tabelas[labels] = str(lista_tabelas[labels]).replace("'", " ").replace("(", "").replace(")", "").replace(",","").replace(" ","")
-
-        for itens in range (1, len(lista_tabelas)+1):
-            lista_id.append(itens)
-
-        for i in range(0,len(lista_tabelas)):
-            tabela_listas.insert("", "end",values=(lista_id[i], lista_tabelas[i]))
-            
-        instrução =  Label(Janela_Deletar_lista, text="Id da lista de emails")
-        instrução.grid( row=2, column=1, columnspan=3)
-
-        escolha_id = Entry(Janela_Deletar_lista)
-        escolha_id.grid(row=3, column=1, columnspan=3)
-
-        botao_escolher_msg = Button(Janela_Deletar_lista, text="Apagar", command= apagar_lista)
-        botao_escolher_msg.grid(row=4, column=1, columnspan=3)
-        
-        texto_conclusao =  Label(Janela_Deletar_lista, text="")
-        texto_conclusao.grid(row=6,column=1,columnspan=3 )
-        
-        
-        botao_sair_Janela_Deletar_lista = Button(Janela_Deletar_lista, text="Voltar", command= Fechar_Janela_Deletar_lista)
-        botao_sair_Janela_Deletar_lista.grid(row=5, column=1, columnspan=3)
-            
-        Janela_Deletar_lista.mainloop()
+    
 
     def mudar_cadastros():
         Janela_gerenciamento.iconify()
@@ -307,188 +273,446 @@ def gerenciamento_emails():
     botao_update = Button(Janela_gerenciamento, text="mudar cadastros", command=mudar_cadastros)
     botao_update.grid(column=4, row= 0, padx=15, pady= 0, columnspan=2)
 
-    botao_deletar_linha = Button(Janela_gerenciamento, text="Deletar linha", command= deletar_usuario)
+    botao_deletar_linha = Button(Janela_gerenciamento, text="Deletar Usuario", command= deletar_usuario)
     botao_deletar_linha.grid(column=4, row= 1, padx=15, pady= 0, columnspan=2)
 
-    botao_deletar_tudo = Button(Janela_gerenciamento, text="Deletar lista", command=deletar_lista)
-    botao_deletar_tudo.grid(column=4, row= 2, padx=15, pady= 0, columnspan=2)
     
     botao_voltar = Button(Janela_gerenciamento, text="voltar", command=Fechar)
-    botao_voltar.grid(column=4, row= 3, padx=15, pady= 5, columnspan=3)
+    botao_voltar.grid(column=4, row= 2, padx=15, pady= 5, columnspan=3)
 
 
 
 
     Janela_gerenciamento.mainloop()
 
-def Escolher_Lista_ou_Criar():
-    Janela_seleção_lista =  Tk()
-    Janela_seleção_lista.title("Seleção lista")
-
-    lista_id = []
-    global Nomes_das_listas
-    Nomes_das_listas = []
-    lista_tabelas = Cadastro.Tabelas()
-
-    def fechar_Janela_seleção_lista(): 
-        Janela_main.deiconify()
-        Janela_seleção_lista.destroy()
-
-    def Escolher_mensagem():
-        """"Fazer pag seleção e enviar emails"""
-        ...
-    
-    def escolha_nome_lista ():
-        Janela_escolha_nome =  Tk()
-        Janela_escolha_nome.title("Nome da nova lista")
-        def fechar_botao_voltar_Janela_escolha_nome():
-            Janela_seleção_lista.deiconify()
-            Janela_escolha_nome.destroy()
-                    
-        def seleção_usuarios():
-            Janela_confirmar_emails = Tk()
-            colunas = "CHAVE INTEGER, Nome TEXT, Sobrenome TEXT,Email TEXT"
-            Janela_confirmar_emails.title("seleção de usuarios")
-            nome_da_lista =  escolha_nome.get()
-            Nomes_das_listas.append(nome_da_lista)
-            Cadastro.nova_tabela(nome_da_lista, colunas, 1)
-            def fechar_Janela_confirmar_emails():
-                Janela_escolha_nome.deiconify()
-                Janela_confirmar_emails.destroy()
-            def ids_escolhidos():
-                id_lista_escolhidos = escolha_id.get()
-                """Criação de nova tabela"""
-                """Cadastro.nova_tabela(nome_da_lista,"Chave TEXT, Nome TEXT, Sobrenome TEXT, Email TEXT", tipo_de_tabela=1 )"""
-
-                ids = 0
-                while ids <= len(id_lista_escolhidos):
-                    """banco1.selecionar_linhas(nome_tabela,str(ids))"""
-                    
-                    slecionado_nao_tratado = Cadastro.selecionar_linhas(nome_tabela,int(id_lista_escolhidos[ids]))
-                    slecionado_nao_tratado = str(slecionado_nao_tratado).replace("(", "").replace(")", "").replace(" ","")
-                    Cadastro.inserir_dados(nome_da_lista,"CHAVE, Nome, Sobrenome, Email", slecionado_nao_tratado, 1)
-                    ids+=2
-
-                    """Tratamento da linha vinda do CRUD CHAVE, Nome, Sobrenome, Email"""
-                
-
-                escolha_id.delete(0, END)
-                confirma["text"] = "texto"
-
-
-
-            global lista
-            lista = []
-            
-
-
-            nome_tabela = "Cadastros"
-            lista_nome_limpa= []
-            lista_id = []
-
-            dados_coluna = Cadastro.selecionar_colunas(nome_tabela, "Nome, Sobrenome")
-            for dados in range (0, len(dados_coluna)):
-                lista_de_nome = list(dados_coluna[dados])
-                for i in range (0,len(lista_de_nome)-1):
-                    lista_de_nome[i] += " " + lista_de_nome[i+1]
-                    lista_de_nome[i] = str(lista_de_nome[i]).title()
-                    lista_de_nome.remove(lista_de_nome[i+1])
-                    lista_nome_limpa.append(lista_de_nome[i])
-
-            for itens in range (1, len(lista_nome_limpa)+1):
-                lista_id.append(itens)
-
-
-            tabela = ttk.Treeview(Janela_confirmar_emails, columns=("id" ,"Nome"), show="headings")
-            tabela.column('id' ,minwidth=0, width=50)
-            tabela.column('Nome' ,minwidth=0, width=150)
-            tabela.heading('id', text="ID")
-            tabela.heading('Nome', text="NOME")
-            tabela.grid(row= 1, column=1, columnspan= 3)
-
-            for i in range(0,len(lista_nome_limpa)):
-                tabela.insert("", "end",values=(lista_id[i], lista_nome_limpa[i]))
-
-            instrução =  Label(Janela_confirmar_emails, text="Ids das pessoas a serem enviadas")
-            instrução.grid( row=2, column=1, columnspan=3)
-
-            instrução_1 =  Label(Janela_confirmar_emails, text="1-coloque somente '0' para todos")
-            instrução_1.grid( row=3, column=1, columnspan=3)
-
-            instrução_2 =  Label(Janela_confirmar_emails, text="2- se não for para todos siga o formato:")
-            instrução_2.grid( row=4, column=1, columnspan=3)
-
-            instrução_3 =  Label(Janela_confirmar_emails, text="id,id2,id3,id4... (1,2,3,4...)")
-            instrução_3.grid( row=5, column=1, columnspan=3)
-
-            escolha_id = Entry(Janela_confirmar_emails)
-            escolha_id.grid(row=6, column=1, columnspan=3)
-
-
-            botao_confirma = Button(Janela_confirmar_emails, text="Confirmar", command= ids_escolhidos)
-            botao_confirma.grid(row=7, column=1, columnspan=3)
-            
-            botao_voltar_Janela_confirmar_emails = Button(Janela_confirmar_emails, text="Voltar", command= fechar_Janela_confirmar_emails)
-            botao_voltar_Janela_confirmar_emails.grid(row=8, column=1, columnspan=3)
-
-            confirma = Label(Janela_confirmar_emails,text="")
-            confirma.grid(row=8, column=1)
-            Janela_escolha_nome.iconify()
-            Janela_confirmar_emails.mainloop()
-
-
-        instrução =  Label(Janela_escolha_nome, text="Qual o nome da nova lista?")
-        instrução.grid( row=2, column=1, columnspan=3)
-        
-        escolha_nome = Entry(Janela_escolha_nome)
-        escolha_nome.grid(row=3, column=1, columnspan=3)
-        
-        confirma = Button(Janela_escolha_nome, text="Confirmar", command= seleção_usuarios)
-        confirma.grid(row=4, column=1, columnspan=3)
-        
-        botao_voltar_Janela_escolha_nome= Button(Janela_escolha_nome, text="Voltar", command=fechar_botao_voltar_Janela_escolha_nome)
-        botao_voltar_Janela_escolha_nome.grid(row=5, column=1, columnspan=3)
-        
-        Janela_seleção_lista.iconify()
-        Janela_escolha_nome.mainloop()
-
-    tabela_listas = ttk.Treeview(Janela_seleção_lista, columns=("id" ,"Nome da Lista"), show="headings")
-    tabela_listas.column('id' ,minwidth=0, width=50)
-    tabela_listas.column('Nome da Lista' ,minwidth=0, width=150)
-    tabela_listas.heading('id', text="ID")
-    tabela_listas.heading('Nome da Lista', text="NOME DA LISTA")
-    tabela_listas.grid(row= 1, column=1, columnspan= 3)
-
-    for labels in range  (0, len(lista_tabelas)):
-        lista_tabelas[labels] = str(lista_tabelas[labels]).replace("'", " ").replace("(", "").replace(")", "").replace(",","").replace(" ","")
-
-    for itens in range (1, len(lista_tabelas)+1):
-        lista_id.append(itens)
-
-    for i in range(0,len(lista_tabelas)):
-        tabela_listas.insert("", "end",values=(lista_id[i], lista_tabelas[i]))
-        
-    instrução =  Label(Janela_seleção_lista, text="Id da lista de emails")
-    instrução.grid( row=2, column=1, columnspan=3)
-
-    escolha_id = Entry(Janela_seleção_lista)
-    escolha_id.grid(row=3, column=1, columnspan=3)
-
-
-    botao_escolher_msg = Button(Janela_seleção_lista, text="Escolher mensagem", command= Escolher_mensagem)
-    botao_escolher_msg.grid(row=4, column=1, columnspan=3)
-
-
-    botao_confirma = Button(Janela_seleção_lista, text="Criar nova lista", command= escolha_nome_lista)
-    botao_confirma.grid(row=5, column=1, columnspan=3)
-    
-    botao_voltar_Janela_seleção_lista = Button(Janela_seleção_lista, text="Voltar", command= fechar_Janela_seleção_lista)
-    botao_voltar_Janela_seleção_lista.grid(row=6, column=1, columnspan=3)
-    
+def Enviar_Emails():
+    Janela_Mensagem = Tk()
+    Janela_Mensagem.title("Escolher mensagem")
     Janela_main.iconify()
-    Janela_seleção_lista.mainloop()
+
+    lista_mensagens =[]
+    lista_chaves = []
+    
+    def fechar_Janela_Mensagem():
+        Janela_main.deiconify()
+        Janela_Mensagem.destroy()
+        
+    def enviar_email():
+
+        id_msg_send = Id_lista_msg.get()
+        dados_msg = Cadastro.ler_dado_id(tabela_mensagem, int(id_msg_send))
+        lista_chaves_envia = str(list(dados_msg[0])[3]).replace("  ", "").split(" ")
+        
+
+        caminho_img = str(list(dados_msg[0])[4])
+        titulo = str(list(dados_msg[0])[2])
 
 
+        
+        for ids in range(0, len(lista_chaves_envia)):
+            dados_usuario = list(Cadastro.ler_dado_chave(Tabela_cadastro,lista_chaves_envia[ids]))[0]
+                
+            destinatario = ""
+            destinatario = dados_usuario[3]
+
+            Nome = ""
+            Sobrenome =""
+            Nome =  dados_usuario[1]
+            Sobrenome =  dados_usuario[2]
+                
+            corpo = ""
+            corpo = str(list(dados_msg[0])[1]).replace("{Nome, Sobrenome}", f"{Nome} {Sobrenome}")
+            
+            smtp_server = 'smtp.gmail.com'
+            smtp_port = 587
+            smtp_username = 'testedoishehe@gmail.com'
+            smtp_password = 'rmkzvguosqwuodsj'
+                
+            msg = MIMEMultipart()
+            msg['From'] = smtp_username
+            msg['To'] = destinatario
+            msg['Subject'] = titulo
+            msg.attach(MIMEText(corpo, 'plain'))
+            with open(caminho_img, 'rb') as imagem_arquivo:
+                imagem = MIMEImage(imagem_arquivo.read())
+                imagem.add_header('Content-Disposition', 'attachment', filename='imagem.jpg')
+                msg.attach(imagem)
+
+                        # Iniciar conexão com o servidor SMTP
+            server = smtplib.SMTP(smtp_server, smtp_port)
+            server.starttls()
+            server.login(smtp_username, smtp_password)
+            server.sendmail(smtp_username, destinatario, msg.as_string())
+            server.quit()
+
+        resultado['text'] = f"OK"
+    
+    def detalhe_msg():
+        try:
+            Janela_detalhe_msg = Tk()
+            Janela_detalhe_msg.title("Detalhes da msg")
+            Janela_Mensagem.iconify()
+            def preview():
+                def enviar_preview():
+                    try:
+                        id_msg_send = Id_lista_msg.get()
+                        dados_msg = Cadastro.ler_dado_id(tabela_mensagem, int(id_msg_send))
+                        caminho_img = str(list(dados_msg[0])[4])
+                        titulo = str(list(dados_msg[0])[2])
+                        destinatario = email_viewer.get()
+                        corpo = str(list(dados_msg[0])[1])
+                        smtp_server = 'smtp.gmail.com'
+                        smtp_port = 587
+                        smtp_username = 'testedoishehe@gmail.com'
+                        smtp_password = 'rmkzvguosqwuodsj'
+                        
+                        msg = MIMEMultipart()
+                        msg['From'] = smtp_username
+                        msg['To'] = destinatario
+                        msg['Subject'] = titulo
+                        msg.attach(MIMEText(corpo, 'plain'))
+                        with open(caminho_img, 'rb') as imagem_arquivo:
+                            imagem = MIMEImage(imagem_arquivo.read())
+                            imagem.add_header('Content-Disposition', 'attachment', filename='imagem.jpg')
+                            msg.attach(imagem)
+                        server = smtplib.SMTP(smtp_server, smtp_port)
+                        server.starttls()
+                        server.login(smtp_username, smtp_password)
+                        server.sendmail(smtp_username, destinatario, msg.as_string())
+                        server.quit()
+                        email_viewer.delete(0,END)
+                        email_viewer_instrucao['text']="Email enviado com sucesso!"
+                    except:
+                        email_viewer_instrucao['text'] ="Não foi possivel enviar o email"    
+                email_viewer_instrucao = Label(Janela_detalhe_msg, text="insira seu email para ver a preview")
+                email_viewer_instrucao.grid(row=14, column=0)
+
+                email_viewer = Entry(Janela_detalhe_msg)
+                email_viewer.grid(row=15, column=0)
+                
+                botao_enviar_preview = Button(Janela_detalhe_msg, text="confirmar", command=enviar_preview)
+                botao_enviar_preview.grid(row=16, column=0)
+                
+                
+            def preview_pdf():
+                try:     
+                        id_msg_send = Id_lista_msg.get()
+                        dados_msg = Cadastro.ler_dado_id(tabela_mensagem, int(id_msg_send))
+                
+                        caminho_img = str(list(dados_msg[0])[4])
+                        titulo = str(list(dados_msg[0])[2])
+                        corpo = str(list(dados_msg[0])[1])
+                        pdf_file = f"Mensage_{id_msg_send}.pdf"
+
+                        doc = SimpleDocTemplate(pdf_file, pagesize=letter)
+
+                        story = []
+
+                        styles = getSampleStyleSheet()
+                        title_style = styles["Title"]
+                        title = Paragraph(titulo, title_style)
+                        story.append(title)
+
+                        text = corpo
+                        story.append(Paragraph(text, styles["Normal"]))
+
+                        image_path = caminho_img
+                        img = Image(image_path, width=300, height=200)
+                        story.append(img)
+
+                        doc.build(story)
+                        criacao_pdf['text'] = f"Pdf {titulo} foi criado com sucesso"
+                except:
+                        criacao_pdf['text'] = f"Pdf não foi criado"
+                        pass
+                def fechar():
+                    Janela_Mensagem.deiconify()
+                    Janela_detalhe_msg.destroy()
+                
+                id_escolhido_msg = Id_lista_msg.get()
+                id_escolhido_msg_nao_tratado = Cadastro.selecionar_linhas(tabela_mensagem,int(id_escolhido_msg))
+                id_escolhido_msg_nao_tratado =  list(id_escolhido_msg_nao_tratado)
+                
+                mensagem_email = id_escolhido_msg_nao_tratado[1]
+                mensagem_titulo = id_escolhido_msg_nao_tratado[2]
+                chaves_usuarios = id_escolhido_msg_nao_tratado[3]
+                caminho = str(id_escolhido_msg_nao_tratado[4]).replace("\\", "\\\\")
+            
+                instrucao_0 = Label(Janela_detalhe_msg, text="Titulo:")
+                instrucao_0.grid(row=0, column=0)
+                titulo = Label(Janela_detalhe_msg, text=mensagem_titulo)
+                titulo.grid(row=1, column=0)
+                instrucao_0 = Label(Janela_detalhe_msg, text="Mensagem:")
+                instrucao_0.grid(row=2, column=0)
+                mensagem = Label(Janela_detalhe_msg, text=mensagem_email)
+                mensagem.grid(row=3, column=0)
+                instrucao_1 = Label(Janela_detalhe_msg, text="Chaves que serão enviadas:")
+                instrucao_1.grid(row=4, column=0)
+                chaves_usu = Label(Janela_detalhe_msg, text=chaves_usuarios)
+                chaves_usu.grid(row=5, column=0)
+                instrucao_2 = Label(Janela_detalhe_msg, text="Imagem escolhida")
+                instrucao_2.grid(row=6, column=0)
+                instrucao_2 = Label(Janela_detalhe_msg, text= caminho)
+                instrucao_2.grid(row=7, column=0)
+                
+                preview_pdf_button = Button(Janela_detalhe_msg, text="PDF", command=preview_pdf)
+                preview_pdf_button.grid(row=11, column=0)
+                criacao_pdf = Label(Janela_detalhe_msg, text= "")
+                criacao_pdf.grid(row=12, column=0)
+                
+                preview_emails_button = Button(Janela_detalhe_msg, text="preview email", command=preview)
+                preview_emails_button.grid(row=13, column=0)
+                fechar_button = Button(Janela_detalhe_msg, text="Fechar", command=fechar)
+                fechar_button.grid(row=17, column=0)
+
+
+                Janela_detalhe_msg.mainloop()
+        except:
+            Janela_Mensagem.deiconify()
+            Janela_detalhe_msg.destroy()
+            resultado['text'] = "Não foi possivel encontrar tal mensagem"
+            pass
+    
+    def deletar_msg():
+        try:
+            Cadastro.apagar_dados_linha(tabela_mensagem,int(Id_lista_msg.get()))
+            resultado['text'] = "Mensagem deletada!"
+        except:
+            resultado['text'] = "Não foi possivel deletar mensagem"
+            pass
+    
+    def atualizar_msg ():
+        try:
+            Janela_Atualizar = Tk()
+            Janela_Atualizar.title("atualize a mensagem")
+            Janela_Mensagem.iconify()
+            def caminho_img():
+                filepath = filedialog.askopenfilename(title="Escolha uma imagem")
+                filepath = filepath.replace("/", "\\")
+                Nova_imagem.delete(0,END)
+                Nova_imagem.insert(0, filepath)
+                print(filepath)
+                
+                
+            def Fechar_Janela_Atualizar():
+                Janela_Mensagem.deiconify()
+                Janela_Atualizar.destroy()
+                
+                
+            def Salvar():
+                try:
+                    atualizacao = f"Mensagem='{Nova_Mensagem.get()}',Titulo='{Novo_titulo.get()} ', Chaves_Usuarios='{Novas_chaves.get()}', Imagem='{Nova_imagem.get()}'"
+                    
+                    Cadastro.atualizar_dados(tabela_mensagem,int(Id_lista_msg.get()),atualizacao )
+                    Confirma_salvamento = Label(Janela_Atualizar, text="Usuario modificado!")
+                    Confirma_salvamento.grid(row=9, column=0, columnspan=4)
+                except:
+                        pass
+                    
+
+            
+            confirma_atualizacao =  Button(Janela_Atualizar, text="Salvar", command=Salvar)
+            confirma_atualizacao.grid(row=12, column=0, columnspan=4)
+                
+            Novo_titulo_instrucao = Label(Janela_Atualizar, text="Edite seu titulo:")
+            Novo_titulo_instrucao.grid(row=1, column=0, columnspan=4)
+            Novo_titulo =  Entry(Janela_Atualizar, width=50)
+            Novo_titulo.grid(row=2, column=0, columnspan=4)
+            
+            Nova_Mensagem_instrucao =  Label(Janela_Atualizar, text="Edite a Mensagem:")
+            Nova_Mensagem_instrucao.grid(row=3, column=0, columnspan=4)
+            Nova_Mensagem = Entry(Janela_Atualizar, width=50)
+            Nova_Mensagem.grid(row=4, column=0, columnspan=4)
+            
+            Novas_chaves_instrucao =  Label(Janela_Atualizar, text="Edite as chaves:")
+            Novas_chaves_instrucao.grid(row=5, column=0, columnspan=4)
+            Novas_chaves = Entry(Janela_Atualizar, width=50)
+            Novas_chaves.grid(row=6, column=0, columnspan=4)
+            
+            Nova_imagem_instrucao =  Label(Janela_Atualizar, text="Edite a imagem:")
+            Nova_imagem_instrucao.grid(row=7, column=0, columnspan=4)
+            Nova_imagem = Entry(Janela_Atualizar, width=50)
+            Nova_imagem.grid(row=8, column=0, columnspan=4)
+            botao_selecao_nova_img =  Button(Janela_Atualizar, text="escolher imagem", command=caminho_img)
+            botao_selecao_nova_img.grid(row=10,column=0, columnspan=4)
+            
+            botao_fechar =  Button(Janela_Atualizar,text="Voltar", command=Fechar_Janela_Atualizar)
+            botao_fechar.grid(row=13, column=0, columnspan=4)
+
+
+
+            informacoes_usuario = list(Cadastro.selecionar_linhas(tabela_mensagem,int(Id_lista_msg.get())))
+            Novo_titulo.insert(0, informacoes_usuario[2])
+            Nova_Mensagem.insert(0, informacoes_usuario[1])
+            Novas_chaves.insert(0, informacoes_usuario[3])
+            Nova_imagem.insert(0, informacoes_usuario[4])    
+            
+            Janela_Atualizar.mainloop()
+        except:
+            Janela_Atualizar.destroy()
+            Janela_Mensagem.deiconify()
+            resultado['text'] = "Não foi atualizar mensagem"
+            pass
+    
+    def nova_mensagem ():
+        Janela_Mensagem.iconify()
+        Janela_Nova_Mensagem = Tk()
+        Janela_Nova_Mensagem.title("Escolher mensagem")
+
+        def Fechar_Janela_Nova_Mensagem():
+            Janela_Mensagem.deiconify()
+            Janela_Nova_Mensagem.destroy()
+        
+        
+        def criar_mensagem ():
+            try:
+                chaves = ""
+                ids_tratados = ID_usuario.get().split(",")
+                for i in range(0 ,len(ids_tratados)):
+                    lista_dados = list(Cadastro.ler_dado_id(Tabela_cadastro,int(ids_tratados[i]))[0])
+                    chaves += f"{lista_dados[0]} "
+
+                msg = Nova_msg.get()
+                img = caminho_img.get()
+                titl = Novo_titulo.get()
+
+                Cadastro.inserir_dados(tabela_mensagem,"'Mensagem','Titulo' ,'Chaves_Usuarios' ,'Imagem'", f"'{msg}','{titl}' ,'{chaves}', '{img}'", 0)
+            except:
+                confirmar_nova_msg['text'] = "Não foi possivel criar nova mensagem"
+                Nova_msg.delete(0, END)
+                ID_usuario.delete(0,END)
+                caminho_img.delete(0,END)
+                pass
+                
+        def Adicionar_imagem():
+            filepath = filedialog.askopenfilename(title="Escolha uma imagem")
+            filepath = filepath.replace("/", "\\\\")
+            caminho_img.grid(row=10, column=5)
+            caminho_img.insert(0,filepath)
+
+        global Nomes_das_listas
+        lista_nome_limpa = []
+        Nomes_das_listas =[]
+        dados_coluna = Cadastro.selecionar_colunas(Tabela_cadastro, "Nome, Sobrenome")
+        for dados in range (0, len(dados_coluna)):
+            lista_de_nome = list(dados_coluna[dados])
+            for i in range (0,len(lista_de_nome)-1):
+                lista_de_nome[i] += " " + lista_de_nome[i+1]
+                lista_de_nome[i] = str(lista_de_nome[i]).title()
+                lista_de_nome.remove(lista_de_nome[i+1])
+                lista_nome_limpa.append(lista_de_nome[i])
+
+
+        tabela_listas = ttk.Treeview(Janela_Nova_Mensagem, columns=("id" ,"Nome de todos usuarios"), show="headings", height=15)
+        tabela_listas.column('id' ,minwidth=0, width=50)
+        tabela_listas.column('Nome de todos usuarios' ,minwidth=0, width=150)
+        tabela_listas.heading('id', text="ID")
+        tabela_listas.heading('Nome de todos usuarios', text="NOME USUARIOS")
+        tabela_listas.grid(row= 0, column=0, columnspan= 5, rowspan= 18)
+
+        for labels in range  (0, len(lista_nome_limpa)):
+            lista_nome_limpa[labels] = str(lista_nome_limpa[labels]).replace("'", " ").replace("(", "").replace(")", "").replace(",","")
+
+        for id in range(0,len(lista_nome_limpa)):
+            tabela_listas.insert("", "end",values=(id + 1, lista_nome_limpa[id]))
+            
+        ID_usuario_instrucao =  Label(Janela_Nova_Mensagem, text="ID's dos usuarios que irão receber a mensagem")
+        ID_usuario_instrucao.grid(row=0, column=5)
+        ID_usuario = Entry(Janela_Nova_Mensagem, width=35)
+        ID_usuario.grid(row=1, column=5, columnspan=1)
+        
+        instrucao_nova_mensagem =  Label(Janela_Nova_Mensagem, text="Nova mensagem \n OBS: para adicionar o nome do cliente \n ulilizar {Nome, Sobrenome } ")
+        instrucao_nova_mensagem.grid(row=7, column=5)
+        
+        Nova_msg = Entry(Janela_Nova_Mensagem, width=35)
+        Nova_msg.grid(row=8, column=5, columnspan=1)
+        
+        instrucao_novo_titulo =  Label(Janela_Nova_Mensagem, text="Novo Titulo")
+        instrucao_novo_titulo.grid(row=5, column=5)
+        
+        Novo_titulo = Entry(Janela_Nova_Mensagem, width=35)
+        Novo_titulo.grid(row=6, column=5, columnspan=1)
+
+        Adicionar_img = Button(Janela_Nova_Mensagem, text="Adicionar imagem", command=Adicionar_imagem)
+        Adicionar_img.grid(row=9, column=5)
+        
+        caminho_img = Entry(Janela_Nova_Mensagem)
+
+        botao_criar_msg = Button(Janela_Nova_Mensagem, text="Confirma", command=criar_mensagem)
+        botao_criar_msg.grid(row=11, column=5)
+        
+        confirmar_nova_msg = Label(Janela_Nova_Mensagem, text="")
+        confirmar_nova_msg.grid(row=12, column=5)
+        
+        botao_fechar_Janela_Nova_Mensagem = Button(Janela_Nova_Mensagem, text="voltar", command=Fechar_Janela_Nova_Mensagem)
+        botao_fechar_Janela_Nova_Mensagem.grid(row=13, column=5)
+
+        Janela_Nova_Mensagem.mainloop()
+    
+
+        
+        
+    dados_coluna_mensagems = Cadastro.selecionar_colunas(tabela_mensagem, "Mensagem")
+    for dados in range (0, len(dados_coluna_mensagems)):
+        lista_mensagens.append(dados_coluna_mensagems[dados])
+        
+    dados_coluna_chave = Cadastro.selecionar_colunas(tabela_mensagem, "Chaves_Usuarios")
+    for dados in range (0, len(dados_coluna_chave)):
+        lista_chaves.append(dados_coluna_chave[dados])
+
+    tabela_listas = ttk.Treeview(Janela_Mensagem, columns=("id" ,"Mensagem", "Chaves"), show="headings")
+    tabela_listas.column('id' ,minwidth=0, width=50)
+    tabela_listas.column('Mensagem' ,minwidth=0, width=250)
+    tabela_listas.column('Chaves' ,minwidth=0, width=150)
+
+    tabela_listas.heading('id', text="ID")
+    tabela_listas.heading('Mensagem', text="Mensagem")
+    tabela_listas.heading('Chaves', text="Chaves dos usuarios presentes")
+
+    tabela_listas.grid(row= 0, column=0, columnspan= 3, rowspan= 15)
+
+    for labels in range  (0, len(lista_mensagens)):
+        lista_mensagens[labels] = str(lista_mensagens[labels]).replace("'", " ").replace("(", "").replace(")", "").replace(",","")
+
+    for chaves in range  (0, len(lista_chaves)):
+        lista_chaves[chaves] = str(lista_chaves[chaves]).replace("'", " ").replace("(", "").replace(")", "").replace(",","    ")
+
+    for id in range(0,len(lista_mensagens)):
+        tabela_listas.insert("", "end",values=(id + 1, lista_mensagens[id], lista_chaves[id]))
+        
+        
+    instrucao_id_msg = Label(Janela_Mensagem, text="Id da mensagem")
+    instrucao_id_msg.grid(row= 1, column=3, columnspan= 3)
+
+    Id_lista_msg =  Entry(Janela_Mensagem)
+    Id_lista_msg.grid(row= 2, column=3, columnspan= 3)
+
+    botao_confirmar_msg =  Button(Janela_Mensagem, text="Confirma", command=enviar_email)
+    botao_confirmar_msg.grid(row= 3, column=3, columnspan= 3)
+
+    botao_mudar_msg = Button(Janela_Mensagem, text="Atualizar mensagem " ,command=atualizar_msg)
+    botao_mudar_msg.grid(row=4, column=3, columnspan=3)
+
+    botao_delete_msg = Button(Janela_Mensagem, text="deletar linha", command= deletar_msg)
+    botao_delete_msg.grid(row= 5, column=3, columnspan=3)
+
+    botao_detalhes = Button(Janela_Mensagem, text="Sobre", command=detalhe_msg)
+    botao_detalhes.grid(row=6, column=3, columnspan=3)
+
+    resultado = Label(Janela_Mensagem, text="")
+    resultado.grid(row=7, column=3, columnspan=3)
+
+    botao_criar_nova_msg =  Button(Janela_Mensagem, text="Criar nova mensagem", command=nova_mensagem)
+    botao_criar_nova_msg.grid(row= 12, column=3, columnspan= 3)
+    
+
+    botao_fechar = Button(Janela_Mensagem, text="Voltar", command=fechar_Janela_Mensagem)
+    botao_fechar.grid(row= 14, column=3, columnspan= 3)
+
+    Janela_Mensagem.mainloop()
+
+def Respostas():
+    ...
 
 texto_bem_vindo = Label(Janela_main, text= "Bem vindo ao programa de envio e cadastro de emails!!")
 texto_bem_vindo.grid(column=0, row= 0, padx=15, pady= 5, columnspan=3)
@@ -500,7 +724,14 @@ botao_pag_cadastro.grid(column=0, row=1,padx=15, pady= 5, columnspan=3)
 botao_pag_gerenciamento= Button(Janela_main, text= "Gerenciar emails", command= gerenciamento_emails)
 botao_pag_gerenciamento.grid(column=0, row=2,padx=15, pady= 5, columnspan=3)
 
-botao_pag_envio = Button(Janela_main, text= "Enviar Emails", command=Escolher_Lista_ou_Criar)
+botao_pag_envio = Button(Janela_main, text= "Enviar Emails", command=Enviar_Emails)
 botao_pag_envio.grid(column=0, row=3,padx=15, pady= 5, columnspan=3)
+
+
+botao_ver_respostas = Button(Janela_main, text= "Ver Respostas", command=Respostas)
+botao_ver_respostas.grid(column=0, row=4,padx=15, pady= 5, columnspan=3)
+
+botao_sair = Button(Janela_main, text= "Fechar", command=Sair)
+botao_sair.grid(column=0, row=5,padx=15, pady= 5, columnspan=3)
 
 Janela_main.mainloop()

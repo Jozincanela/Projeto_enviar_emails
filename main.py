@@ -1,9 +1,6 @@
 from tkinter import *
 from tkinter import ttk
 from bd_poo import CRUD
-from tkinter import *
-from tkinter import ttk
-from bd_poo import CRUD
 from tkinter import filedialog
 from PIL import Image, ImageTk
 import smtplib
@@ -21,7 +18,8 @@ import threading
 Janela_main = Tk()
 Janela_main.title("Main")
 
-Cadastro = CRUD("Main\\banco_projeto_email.db")
+Cadastro = CRUD("C:\\Users\\afrod\\OneDrive\\Documentos\\Programas\\Projeto envio emails\\banco_projeto_email.db")
+
 
 Tabela_cadastro = "Cadastros"
 colunas_cadastro = "Nome, Sobrenome, Email"
@@ -32,9 +30,13 @@ coluanas_excluidos = "CHAVE,Nome,Sobrenome,Email"
 tabela_mensagem =  "Mensagem"
 colunas_mensagem = "mensagem chaves_usuarios"
 
+tabela_email_salvo = "Email"
+coluna_email_salvo = "Email, Senha"
+
 Cadastro.nova_tabela("Cadastros", "Nome TEXT, Sobrenome TEXT, Email TEXT",0)
 Cadastro.nova_tabela("Mensagem", "Mensagem TEXT, Titulo TEXT, Chaves_Usuarios TEXT, Imagem TEXT", 0)
 Cadastro.nova_tabela("Excluidos","Nome TEXT,Sobrenome TEXT, Email TEXT", 0 )
+Cadastro.nova_tabela("Email","Email TEXT,Senha TEXT", 1)
 
 
 def Sair():
@@ -309,7 +311,7 @@ def Enviar_Emails():
 
 
         
-        for ids in range(0, len(lista_chaves_envia)):
+        for ids in range(0, len(lista_chaves_envia)-1):
             dados_usuario = list(Cadastro.ler_dado_chave(Tabela_cadastro,lista_chaves_envia[ids]))[0]
                 
             destinatario = ""
@@ -325,8 +327,8 @@ def Enviar_Emails():
             
             smtp_server = 'smtp.gmail.com'
             smtp_port = 587
-            smtp_username = 'testedoishehe@gmail.com'
-            smtp_password = 'rmkzvguosqwuodsj'
+            smtp_username = list(Cadastro.ler_dado_id(tabela_email_salvo, 1)[0])[0]
+            smtp_password = list(Cadastro.ler_dado_id(tabela_email_salvo, 1)[0])[1]
                 
             msg = MIMEMultipart()
             msg['From'] = smtp_username
@@ -338,7 +340,6 @@ def Enviar_Emails():
                 imagem.add_header('Content-Disposition', 'attachment', filename='imagem.jpg')
                 msg.attach(imagem)
 
-                        # Iniciar conexão com o servidor SMTP
             server = smtplib.SMTP(smtp_server, smtp_port)
             server.starttls()
             server.login(smtp_username, smtp_password)
@@ -363,8 +364,8 @@ def Enviar_Emails():
                         corpo = str(list(dados_msg[0])[1])
                         smtp_server = 'smtp.gmail.com'
                         smtp_port = 587
-                        smtp_username = 'testedoishehe@gmail.com'
-                        smtp_password = 'rmkzvguosqwuodsj'
+                        smtp_username = list(Cadastro.ler_dado_id(tabela_email_salvo, 1)[0])[0]
+                        smtp_password = list(Cadastro.ler_dado_id(tabela_email_salvo, 1)[0])[1]
                         
                         msg = MIMEMultipart()
                         msg['From'] = smtp_username
@@ -425,48 +426,48 @@ def Enviar_Emails():
                 except:
                         criacao_pdf['text'] = f"Pdf não foi criado"
                         pass
-                def fechar():
-                    Janela_Mensagem.deiconify()
-                    Janela_detalhe_msg.destroy()
+            def fechar():
+                Janela_Mensagem.deiconify()
+                Janela_detalhe_msg.destroy()
                 
-                id_escolhido_msg = Id_lista_msg.get()
-                id_escolhido_msg_nao_tratado = Cadastro.selecionar_linhas(tabela_mensagem,int(id_escolhido_msg))
-                id_escolhido_msg_nao_tratado =  list(id_escolhido_msg_nao_tratado)
+            id_escolhido_msg = Id_lista_msg.get()
+            id_escolhido_msg_nao_tratado = Cadastro.selecionar_linhas(tabela_mensagem,int(id_escolhido_msg))
+            id_escolhido_msg_nao_tratado =  list(id_escolhido_msg_nao_tratado)
                 
-                mensagem_email = id_escolhido_msg_nao_tratado[1]
-                mensagem_titulo = id_escolhido_msg_nao_tratado[2]
-                chaves_usuarios = id_escolhido_msg_nao_tratado[3]
-                caminho = str(id_escolhido_msg_nao_tratado[4]).replace("\\", "\\\\")
-            
-                instrucao_0 = Label(Janela_detalhe_msg, text="Titulo:")
-                instrucao_0.grid(row=0, column=0)
-                titulo = Label(Janela_detalhe_msg, text=mensagem_titulo)
-                titulo.grid(row=1, column=0)
-                instrucao_0 = Label(Janela_detalhe_msg, text="Mensagem:")
-                instrucao_0.grid(row=2, column=0)
-                mensagem = Label(Janela_detalhe_msg, text=mensagem_email)
-                mensagem.grid(row=3, column=0)
-                instrucao_1 = Label(Janela_detalhe_msg, text="Chaves que serão enviadas:")
-                instrucao_1.grid(row=4, column=0)
-                chaves_usu = Label(Janela_detalhe_msg, text=chaves_usuarios)
-                chaves_usu.grid(row=5, column=0)
-                instrucao_2 = Label(Janela_detalhe_msg, text="Imagem escolhida")
-                instrucao_2.grid(row=6, column=0)
-                instrucao_2 = Label(Janela_detalhe_msg, text= caminho)
-                instrucao_2.grid(row=7, column=0)
+            mensagem_email = id_escolhido_msg_nao_tratado[1]
+            mensagem_titulo = id_escolhido_msg_nao_tratado[2]
+            chaves_usuarios = id_escolhido_msg_nao_tratado[3]
+            caminho = str(id_escolhido_msg_nao_tratado[4]).replace("\\", "\\\\")
+        
+            instrucao_0 = Label(Janela_detalhe_msg, text="Titulo:")
+            instrucao_0.grid(row=0, column=0)
+            titulo = Label(Janela_detalhe_msg, text=mensagem_titulo)
+            titulo.grid(row=1, column=0)
+            instrucao_0 = Label(Janela_detalhe_msg, text="Mensagem:")
+            instrucao_0.grid(row=2, column=0)
+            mensagem = Label(Janela_detalhe_msg, text=mensagem_email)
+            mensagem.grid(row=3, column=0)
+            instrucao_1 = Label(Janela_detalhe_msg, text="Chaves que serão enviadas:")
+            instrucao_1.grid(row=4, column=0)
+            chaves_usu = Label(Janela_detalhe_msg, text=chaves_usuarios)
+            chaves_usu.grid(row=5, column=0)
+            instrucao_2 = Label(Janela_detalhe_msg, text="Imagem escolhida")
+            instrucao_2.grid(row=6, column=0)
+            instrucao_2 = Label(Janela_detalhe_msg, text= caminho)
+            instrucao_2.grid(row=7, column=0)
                 
-                preview_pdf_button = Button(Janela_detalhe_msg, text="PDF", command=preview_pdf)
-                preview_pdf_button.grid(row=11, column=0)
-                criacao_pdf = Label(Janela_detalhe_msg, text= "")
-                criacao_pdf.grid(row=12, column=0)
+            preview_pdf_button = Button(Janela_detalhe_msg, text="PDF", command=preview_pdf)
+            preview_pdf_button.grid(row=11, column=0)
+            criacao_pdf = Label(Janela_detalhe_msg, text= "")
+            criacao_pdf.grid(row=12, column=0)
                 
-                preview_emails_button = Button(Janela_detalhe_msg, text="preview email", command=preview)
-                preview_emails_button.grid(row=13, column=0)
-                fechar_button = Button(Janela_detalhe_msg, text="Fechar", command=fechar)
-                fechar_button.grid(row=17, column=0)
+            preview_emails_button = Button(Janela_detalhe_msg, text="preview email", command=preview)
+            preview_emails_button.grid(row=13, column=0)
+            fechar_button = Button(Janela_detalhe_msg, text="Fechar", command=fechar)
+            fechar_button.grid(row=17, column=0)
 
 
-                Janela_detalhe_msg.mainloop()
+            Janela_detalhe_msg.mainloop()
         except:
             Janela_Mensagem.deiconify()
             Janela_detalhe_msg.destroy()
@@ -712,7 +713,98 @@ def Enviar_Emails():
     Janela_Mensagem.mainloop()
 
 def Respostas():
-    ...
+    Janela_resposta = Tk()
+    Janela_resposta.title("Respostas")
+    Janela_main.iconify()
+
+    def Voltar_Janela_resposta():
+        Janela_main.deiconify()
+        Janela_resposta.destroy()
+
+    botao_voltar_Janela_resposta = Button(Janela_resposta, text="Voltar", command=Voltar_Janela_resposta)
+    botao_voltar_Janela_resposta.grid(column=0, row=0)
+    Janela_resposta.mainloop()
+
+
+def login():
+    Janela_login = Tk()
+    Janela_login.title("Login")
+    Janela_main.iconify()
+    
+    def Voltar_Janela_main():
+        Janela_main.deiconify()
+        Janela_login.destroy()
+
+
+    def verificacao_senha():
+        if(senha.get() == '0123'):
+            Janela_configuracoes = Tk()
+            Janela_configuracoes.title("configuracoes")
+            Janela_login.iconify()
+            
+            def Fechar():
+                Janela_main.deiconify()
+                Janela_configuracoes.destroy()
+                Janela_login.destroy()
+
+
+            def Salvar_email():
+                try :
+                    Cadastro.ler_dado_id(tabela_email_salvo, 1) 
+                    Aviso_Janela_config['text']= "Já existe um email cadastrado!"
+                except:
+                        try:
+                            valores = f"'{email_de_envio.get()}','{senha_email.get()}'"
+                            Cadastro.inserir_dados(nome_tabela=tabela_email_salvo,valores=valores,nome_coluna=coluna_email_salvo ,tipo_da_tabela=1)
+                            Aviso_Janela_config["text"]= "Salvo!"
+                            email_de_envio.delete(0,END)
+                            senha_email.delete(0,END)
+                        except:
+                            Aviso_Janela_config['text']= "Invalido!"
+                    
+
+
+
+            email_de_envio_instrucao = Label(Janela_configuracoes, text="Email de envio")
+            email_de_envio_instrucao.grid(column =0, row=0)
+
+            email_de_envio = Entry(Janela_configuracoes)
+            email_de_envio.grid(column =0, row=1)
+
+            senha_email_instrucao = Label(Janela_configuracoes, text="Senha de app")
+            senha_email_instrucao.grid(column=0, row=2)
+
+            senha_email = Entry(Janela_configuracoes)
+            senha_email.grid(column=0, row=3)
+
+            Janela_configuracoes_salvar = Button(Janela_configuracoes, text="Salvar", command = Salvar_email)
+            Janela_configuracoes_salvar.grid(column=0, row=4)
+
+            Janela_configuracoes_fechar= Button(Janela_configuracoes, text="Fechar", command = Fechar)
+            Janela_configuracoes_fechar.grid(column=0, row=5)
+
+            Aviso_Janela_config = Label(Janela_configuracoes, text="")
+            Aviso_Janela_config.grid(column=0, row=6)
+
+            Janela_configuracoes.mainloop()
+
+
+
+    instrucao_senha = Label(Janela_login, text = "Senha")
+    instrucao_senha.grid(column=0, row=1)
+
+    senha = Entry(Janela_login)
+    senha.grid(column = 0, row=2)
+
+    botao_senha = Button(Janela_login, text="confirma", command = verificacao_senha)
+    botao_senha.grid(column=0, row=3)
+
+    botao_Janela_login_voltar = Button(Janela_login,text="voltar", command=Voltar_Janela_main)
+    botao_Janela_login_voltar.grid(column=0, row = 4)
+    
+
+    Janela_login.mainloop()
+
 
 texto_bem_vindo = Label(Janela_main, text= "Bem vindo ao programa de envio e cadastro de emails!!")
 texto_bem_vindo.grid(column=0, row= 0, padx=15, pady= 5, columnspan=3)
@@ -729,6 +821,9 @@ botao_pag_envio.grid(column=0, row=3,padx=15, pady= 5, columnspan=3)
 
 
 botao_ver_respostas = Button(Janela_main, text= "Ver Respostas", command=Respostas)
+botao_ver_respostas.grid(column=0, row=4,padx=15, pady= 5, columnspan=3)
+
+botao_ver_respostas = Button(Janela_main, text= "Area do administrador", command=login)
 botao_ver_respostas.grid(column=0, row=4,padx=15, pady= 5, columnspan=3)
 
 botao_sair = Button(Janela_main, text= "Fechar", command=Sair)
